@@ -1,0 +1,8 @@
+bin/
+dist/
+coverage.out
+.DS_Store
+*.log
+*.tmp
+requests/
+responses/
