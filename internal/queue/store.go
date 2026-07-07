@@ -5,12 +5,21 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/MarlonJD/vmware-mcp-server/internal/protocol"
 )
 
 type Store struct {
 	Root string
+}
+
+func (store Store) PendingRequests() ([]string, error) {
+	return filepath.Glob(filepath.Join(store.RequestsDir(), "*.pending.json"))
+}
+
+func (store Store) ReadRequest(path string) (protocol.Request, error) {
+	return ReadRequest(path)
 }
 
 func New(root string) Store {
@@ -74,4 +83,13 @@ func (store Store) WriteResponse(response protocol.Response) (string, error) {
 	payload = append(payload, '\n')
 	path := filepath.Join(store.ResponsesDir(), fmt.Sprintf("%s.json", response.RequestID))
 	return path, os.WriteFile(path, payload, 0o644)
+}
+
+func (store Store) MarkHandled(path string, status string) error {
+	suffix := ".handled.json"
+	if status != "" {
+		suffix = "." + status + ".json"
+	}
+	handledPath := strings.TrimSuffix(path, ".pending.json") + suffix
+	return os.Rename(path, handledPath)
 }

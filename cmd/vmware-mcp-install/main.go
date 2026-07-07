@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	mode := flag.String("mode", "help", "install target: launchagent, windows-startup-task, or help")
+	mode := flag.String("mode", "help", "install target: launchagent, windows-service, or help")
 	binary := flag.String("binary", "/usr/local/bin/vmware-uac-daemon", "daemon binary path")
 	queue := flag.String("queue", "/Users/marlonjd/Developer/demo/testvm/vmware-mcp-server/queue", "shared queue root")
 	flag.Parse()
@@ -15,10 +15,10 @@ func main() {
 	switch *mode {
 	case "launchagent":
 		fmt.Print(launchAgentPlist(*binary, *queue))
-	case "windows-startup-task", "windows-service":
-		fmt.Print(windowsStartupTaskPowerShell(*binary, *queue))
+	case "windows-service":
+		fmt.Print(windowsServicePowerShell(*binary, *queue))
 	default:
-		fmt.Fprintln(os.Stdout, "usage: vmware-mcp-install --mode launchagent|windows-startup-task")
+		fmt.Fprintln(os.Stdout, "usage: vmware-mcp-install --mode launchagent|windows-service")
 	}
 }
 
@@ -45,15 +45,13 @@ func launchAgentPlist(binary, queue string) string {
 `, binary, queue)
 }
 
-func windowsStartupTaskPowerShell(binary, queue string) string {
+func windowsServicePowerShell(binary, queue string) string {
 	return fmt.Sprintf(
 		"$binary = %q\n"+
 			"$queue = %q\n"+
-			"$action = New-ScheduledTaskAction -Execute $binary -Argument ('--queue \"' + $queue + '\"')\n"+
-			"$trigger = New-ScheduledTaskTrigger -AtLogOn\n"+
-			"$settings = New-ScheduledTaskSettingsSet -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)\n"+
-			"Register-ScheduledTask -TaskName \"vmware-mcp-agent\" -Action $action -Trigger $trigger -Settings $settings -Description \"VMware MCP Agent\" -Force\n"+
-			"Start-ScheduledTask -TaskName \"vmware-mcp-agent\"\n",
+			"$binPath = '\"' + $binary + '\" --service --queue \"' + $queue + '\"'\n"+
+			"New-Service -Name \"vmware-mcp-agent\" -DisplayName \"VMware MCP Agent\" -StartupType Automatic -BinaryPathName $binPath\n"+
+			"Start-Service -Name \"vmware-mcp-agent\"\n",
 		binary,
 		queue,
 	)

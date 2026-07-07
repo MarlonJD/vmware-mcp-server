@@ -13,6 +13,35 @@ type Launcher interface {
 	LaunchApp(context.Context, protocol.LaunchApp) error
 }
 
+func ProcessPending(ctx context.Context, store queueStore, service Service) error {
+	matches, err := store.PendingRequests()
+	if err != nil {
+		return err
+	}
+	for _, path := range matches {
+		request, err := store.ReadRequest(path)
+		if err != nil {
+			return err
+		}
+		if request.UAC != nil {
+			continue
+		}
+		response := service.Handle(ctx, request)
+		if _, err := store.WriteResponse(response); err != nil {
+			return err
+		}
+		_ = store.MarkHandled(path, response.Status)
+	}
+	return nil
+}
+
+type queueStore interface {
+	PendingRequests() ([]string, error)
+	ReadRequest(string) (protocol.Request, error)
+	WriteResponse(protocol.Response) (string, error)
+	MarkHandled(string, string) error
+}
+
 type Runner interface {
 	RunCommand(context.Context, protocol.RunCommand) error
 }

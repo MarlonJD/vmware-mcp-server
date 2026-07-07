@@ -8,6 +8,7 @@ Copyright (C) 2026 Burak Karahan. Licensed under LGPL-3.0-or-later.
 
 - `vmware-mcp-server`: macOS host-side MCP stdio server for Codex.
 - `vmware-mcp-agent`: Windows guest-side queue agent for launching apps and running commands.
+  It can run in the foreground or as a real Windows Service with `--service`.
 - `vmware-uac-daemon`: macOS host-side UAC bridge daemon.
 - `vmware-mcp-install`: installer helper for LaunchAgent and Windows service setup.
 
@@ -72,10 +73,10 @@ vmware-mcp-install --mode launchagent \
   --queue /path/to/shared/queue > ~/Library/LaunchAgents/com.burakkarahan.vmware-uac-daemon.plist
 ```
 
-Generate PowerShell for a Windows startup task:
+Generate PowerShell for a Windows Service:
 
 ```powershell
-vmware-mcp-install --mode windows-startup-task `
+vmware-mcp-install --mode windows-service `
   --binary "C:\Program Files\vmware-mcp-tools\vmware-mcp-agent.exe" `
   --queue "\\vmware-host\Shared Folders\vmware-mcp-server\queue"
 ```
